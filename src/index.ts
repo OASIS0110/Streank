@@ -10,32 +10,23 @@ import {
   InteractionsError,
 } from '@akki256/discord-interaction';
 import { DiscordEvents } from './modules/events';
-import { Player } from 'discord-player';
-import { DefaultExtractors } from '@discord-player/extractor';
 
 const client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildVoiceStates,
 		GatewayIntentBits.MessageContent,
-		GatewayIntentBits.GuildMessages
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.DirectMessages,
+		GatewayIntentBits.DirectMessageReactions
 	],
 });
 
 // DB Check
-const autoJoinDb = new Database(process.env.JOIN_CHANNEL_DB ?? "");
-autoJoinDb.prepare(`CREATE TABLE IF NOT EXISTS auto_join_channels (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, guild_id TEXT NOT NULL, voice_channel_id TEXT NOT NULL, read_channel_id TEXT NOT NULL, auto_join INTEGER NOT NULL DEFAULT 0 CHECK (auto_join IN (0, 1)))`).run();
-autoJoinDb.close();
-
-const ttsInfoDb = new Database(process.env.TTS_INFO_DB ?? "");
-ttsInfoDb.prepare(`CREATE TABLE IF NOT EXISTS tts_info (id INTEGER PRIMARY KEY, guild_id TEXT NOT NULL, voice_channel_id TEXT NOT NULL, message_channel_id TEXT NOT NULL)`).run();
-// 起動時初期化
-ttsInfoDb.prepare(`DELETE FROM tts_info`).run();
-ttsInfoDb.close();
-
-const player = new Player(client);
-
-player.extractors.loadMulti(DefaultExtractors);
+const db = new Database('streank.db')
+db.prepare('CREATE TABLE IF NOT EXSISTS youtubers (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name TEXT NOT NULL, user_id TEXT NOT NULL,channel_id TEXT NOT NULL').run();
+db.prepare('CREATE TABLE IF NOT EXSISTS register_list (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, client_id TEXT NOT NULL, youtuber_id INTEGER NOT NULL FOREIGN KEY REFERENCES youtubers(id), members_only INTEGER NOT NULL DEFAULT 0 CHECK (members_only IN (0, 1)), presume INTEGER NOT NULL DEFAULT 0 CHECK (presume IN (0, 1))').run();
+db.close();
 
 const interactions = new DiscordInteractions(client);
 interactions.loadRegistries(path.resolve(__dirname, './commands'));
@@ -47,11 +38,6 @@ client.once(Events.ClientReady, (): void => {
   console.log('[INFO] BOT ready!');
   interactions.registerCommands({ guildId: process.env.GUILD_ID ?? undefined });
 });
-
-player.events.on("playerFinish", async (queue, track) => {
-	console.log(`Track ended: ${track.title}`);
-	console.log(track);
-}); 
 
 client.on(Events.InteractionCreate, (interaction): void => {
   if (!interaction.isRepliable()) return;
