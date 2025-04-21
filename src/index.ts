@@ -23,9 +23,19 @@ const client = new Client({
 });
 
 // DB Check
-const db = new Database('streank.db')
-db.prepare('CREATE TABLE IF NOT EXSISTS youtubers (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name TEXT NOT NULL, user_id TEXT NOT NULL,channel_id TEXT NOT NULL').run();
-db.prepare('CREATE TABLE IF NOT EXSISTS register_list (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, client_id TEXT NOT NULL, youtuber_id INTEGER NOT NULL FOREIGN KEY REFERENCES youtubers(id), members_only INTEGER NOT NULL DEFAULT 0 CHECK (members_only IN (0, 1)), presume INTEGER NOT NULL DEFAULT 0 CHECK (presume IN (0, 1))').run();
+const db = new Database(process.env.DATABASE ?? './db/streank.db');
+db.prepare(`CREATE TABLE IF NOT EXISTS youtubers (
+	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+	name TEXT NOT NULL,
+	user_id TEXT NOT NULL,
+	channel_id TEXT NOT NULL);`).run();
+db.prepare(`CREATE TABLE IF NOT EXISTS register_list (
+	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+	client_id TEXT NOT NULL,
+	youtuber_id INTEGER NOT NULL,
+	members_only INTEGER NOT NULL DEFAULT 0 CHECK (members_only IN (0, 1)),
+	presume INTEGER NOT NULL DEFAULT 0 CHECK (presume IN (0, 1)),
+	FOREIGN KEY (youtuber_id) REFERENCES youtubers(id));`).run();
 db.close();
 
 const interactions = new DiscordInteractions(client);
