@@ -43,7 +43,8 @@
 				},
 				"onlyBuiltDependencies": [
 						"@biomejs/biome",
-						"@swc/core"
+						"@swc/core",
+						"better-sqlite3"
 				]
 		}
 }
