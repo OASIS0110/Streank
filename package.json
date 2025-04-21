@@ -1,5 +1,5 @@
 {
-		"name": "pingtube",
+		"name": "streank",
 		"version": "1.0.0",
 		"description": "description",
 		"main": "index.js",
@@ -17,13 +17,16 @@
 		"dependencies": {
 				"@akki256/discord-interaction": "^3.1.1",
 				"@biomejs/biome": "^1.9.4",
+				"better-sqlite3": "^11.9.1",
 				"discord.js": "^14.17.3",
 				"dotenv": "^16.4.5",
 				"typescript": "^5.6.2"
 		},
 		"devDependencies": {
+				"@dotenvx/dotenvx": "^1.41.0",
 				"@swc/core": "^1.7.42",
 				"@swc/helpers": "^0.5.13",
+				"@types/better-sqlite3": "^7.6.13",
 				"shx": "^0.3.4",
 				"ts-node": "^10.9.2",
 				"ts-node-dev": "^2.0.0",
