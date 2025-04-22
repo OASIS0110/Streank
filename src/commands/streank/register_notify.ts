@@ -33,9 +33,8 @@ const registerNotify = new ChatInput({
 		const clientId = interaction.user.id;
 
 		const db = new Database('./db/streank.db');
-		const youtuberCount = db.prepare(`SELECT EXISTS (SELECT 1 FROM youtubers WHERE ? IN (channel_id, user_id));`).get(youtuberId);
-		const youtuberCount2 = db.prepare(`SELECT * FROM youtubers WHERE ? IN (channel_id, user_id) LIMIT 1;`).get(youtuberId);
-		console.log(youtuberCount2);
+		const youtuberCount2 : {count: Number} = db.prepare(`SELECT EXISTS (SELECT 1 FROM youtubers WHERE ? IN (channel_id, user_id)) as count;`).get(youtuberId);
+		console.log(youtuberCount2.count);
 		// youtuberCount.run(`${youtuberId}`);
 		// console.log(youtuberCount.all());
 		// if (db.prepare(`SELECT EXISTS (SELECT 1 FROM youtubers WHERE ? IN (channel_id, user_id));`).get(youtuberId) === 0) {
