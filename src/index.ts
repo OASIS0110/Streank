@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import path from 'node:path';
 dotenv.config();
 import Database from "better-sqlite3"
+import pubsubhubbub from 'pubsubhubbub';
 
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import {
@@ -51,6 +52,7 @@ client.once(Events.ClientReady, (): void => {
 
 client.on(Events.InteractionCreate, (interaction): void => {
   if (!interaction.isRepliable()) return;
+
 
   interactions.run(interaction).catch((err) => {
     if (
