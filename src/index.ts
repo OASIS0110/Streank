@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import path from 'node:path';
 dotenv.config();
 import Database from "better-sqlite3"
-import pubsubhubbub from 'pubsubhubbub';
 
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import {
