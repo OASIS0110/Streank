@@ -4,11 +4,7 @@ dotenv.config();
 import Database from "better-sqlite3"
 
 import { Client, Events, GatewayIntentBits } from 'discord.js';
-import {
-  DiscordInteractions,
-  ErrorCodes,
-  InteractionsError,
-} from '@akki256/discord-interaction';
+import { DiscordInteractions, ErrorCodes, InteractionsError, } from '@akki256/discord-interaction';
 import { DiscordEvents } from './modules/events';
 
 const client = new Client({
