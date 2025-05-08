@@ -6,7 +6,7 @@
 		"scripts": {
 				"start": "node build/index.js",
 				"deploy": "node deploy-commands.js",
-				"dev": "tsnd --loader ts-node/esm -T --rs src/index.ts",
+				"dev": "tsnd -r tsconfig-paths/register --loader ts-node/esm -T --rs src/index.ts",
 				"build": "tsc -p .",
 				"prepare": "ts-patch install",
 				"test": "tsnd --loader ts-node/esm -T --rs src/test/win32test.ts"
@@ -19,6 +19,7 @@
 				"@biomejs/biome": "^1.9.4",
 				"@googleapis/youtube": "^25.0.0",
 				"@types/gapi.youtube": "^3.0.40",
+				"@types/node": "^22.15.16",
 				"axios": "^1.9.0",
 				"better-sqlite3": "^11.9.1",
 				"body-parser": "^2.2.0",
