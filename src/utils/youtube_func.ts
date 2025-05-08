@@ -25,7 +25,7 @@ type searchYoutuberType = {
  * @returns object
  */
 
-export const searchYoutuber = async ({ searchStr, maxResult = 50, part = ['snippet'], searchType, debug = false }: searchYoutuberType) => {
+const searchYoutuber = async ({ searchStr, maxResult = 50, part = ['snippet'], searchType, debug = false }: searchYoutuberType) => {
 	// search by channel id
 	if (searchStr.startsWith('UC') && searchStr.length === 24 || searchType === 'channelId') {
 		debug && console.log('searching Youtuber by channel id...');
@@ -49,3 +49,9 @@ export const searchYoutuber = async ({ searchStr, maxResult = 50, part = ['snipp
 		return res;
 	}
 }
+
+const getPublicAndMemberVideosList = ({channelId}: {channelId: string}) => {
+	return [`https://www.youtube.com/feeds/videos.xml?playlist_id=UU${channelId.slice(2)}`, `https://www.youtube.com/feeds/videos.xml?playlist_id=UUMO${channelId.slice(2)}`]
+}
+
+export { searchYoutuber, getPublicAndMemberVideosList };

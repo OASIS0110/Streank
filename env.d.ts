@@ -6,7 +6,9 @@ declare module 'node:process' {
 				readonly CLIENT_ID: string;
 				readonly YOUTUBE_API_KEY: string;
 				readonly GUILD_ID: string;
-				readonly Database: string;
+				readonly DATABASE: string;
+				readonly EXPRESS_PORT: string;
+				readonly CALLBACK_URL: string;
 			}
 		}
 	}

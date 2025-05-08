@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import path from 'node:path';
 dotenv.config();
 import Database from "better-sqlite3"
+import pubsub_startup from './pubsub_initialize';
 
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { DiscordInteractions, ErrorCodes, InteractionsError, } from '@akki256/discord-interaction';
@@ -24,7 +25,8 @@ db.prepare(`CREATE TABLE IF NOT EXISTS youtubers (
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	name TEXT NOT NULL,
 	handle_name TEXT NOT NULL CHECK (handle_name GLOB '@*'),
-	channel_id TEXT NOT NULL);`).run();
+	channel_id TEXT NOT NULL,
+	lease_time TEXT);`).run();
 db.prepare(`CREATE TABLE IF NOT EXISTS register_list (
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	client_id TEXT NOT NULL,
@@ -39,6 +41,8 @@ interactions.loadRegistries(path.resolve(__dirname, './commands'));
 
 const events = new DiscordEvents(client);
 events.register(path.resolve(__dirname, './events'));
+
+pubsub_startup();
 
 client.once(Events.ClientReady, (): void => {
   console.log('[INFO] BOT ready!');
