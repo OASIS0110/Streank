@@ -1,6 +1,8 @@
 import axios from "axios"
 
-const subscribeToFeed = async ({topicUrls, hubUrl = 'https://pubsubhubbub.appspot.com/', callbackUrl, leaseSeconds = 86400, verify = 'async'}: {topicUrls: Array<string>, hubUrl?: string, callbackUrl: string | undefined, leaseSeconds?: number, verify?: 'async' | 'sync'}) => {
+const defaultLeaseTime = 86400; // 24 hours (86400 seconds)
+
+const subscribeToFeed = async ({topicUrls, hubUrl = 'https://pubsubhubbub.appspot.com/', callbackUrl, leaseSeconds = defaultLeaseTime, verify = 'async'}: {topicUrls: Array<string>, hubUrl?: string, callbackUrl: string | undefined, leaseSeconds?: number, verify?: 'async' | 'sync'}) => {
 	if (!callbackUrl) {
 		console.error('❌ Callback URL was undefined.');
 		return;
@@ -14,7 +16,7 @@ const subscribeToFeed = async ({topicUrls, hubUrl = 'https://pubsubhubbub.appspo
 					'hub.topic': topicUrl,
 					'hub.callback': callbackUrl,
 					'hub.verify': verify, // default 'async'
-					'hub.lease_seconds': `${leaseSeconds}`, // default 86400 (24 hours)	
+					'hub.lease_seconds': `${leaseSeconds}`,
 				}),
 				{
 					headers: {
