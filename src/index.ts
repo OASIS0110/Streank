@@ -26,7 +26,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS youtubers (
 	name TEXT NOT NULL,
 	handle_name TEXT NOT NULL CHECK (handle_name GLOB '@*'),
 	channel_id TEXT NOT NULL,
-	lease_time TEXT);`).run();
+	lease_time TEXT DEFAULT (datetime('now', 'localtime')));`).run();
 db.prepare(`CREATE TABLE IF NOT EXISTS register_list (
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	client_id TEXT NOT NULL,

@@ -15,7 +15,7 @@ type YoutuberResultDBType = {
 	channel_id: string;
 }
 
-export const searchYoutuberFromDB = ({ databaseDir, searchStr, debug = false }: searchYoutuberFromDBType): YoutuberResultDBType | undefined => {
+const searchYoutuberFromDB = ({ databaseDir, searchStr, debug = false }: searchYoutuberFromDBType): YoutuberResultDBType | undefined => {
 	if (!databaseDir) return undefined;
 	let result = undefined
 	const database = new Database(databaseDir);
@@ -37,3 +37,20 @@ export const searchYoutuberFromDB = ({ databaseDir, searchStr, debug = false }: 
 	debug && console.log(result);
 	return result;
 }
+
+const getAllYoutuberId = ({ databaseDir, where }: { databaseDir: string | undefined, where?: string }): string[] => {
+	if (!databaseDir) return [];
+	const database = new Database(databaseDir);
+	let result = [] as {channel_id: string}[];
+	if (where) {
+		result = database.prepare(`SELECT channel_id FROM youtubers WHERE ${where};`).all() as {channel_id: string}[];
+		database.close();
+	}
+	else {
+		result = database.prepare(`SELECT channel_id FROM youtubers;`).all() as {channel_id: string}[];
+		database.close();
+	}
+	return result.map((row) => row.channel_id);
+}
+
+export { searchYoutuberFromDB, getAllYoutuberId }

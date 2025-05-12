@@ -1,13 +1,19 @@
 import express from 'express';
 import bodyParser from 'body-parser';
+import Database from 'better-sqlite3';
+import dotenv from 'dotenv';
+import { formatDate } from 'date-fns'
+dotenv.config();
+
 import { subscribeToFeed } from '@utils/pubsub_func';
 import { getPublicAndMemberVideosList } from '@utils/youtube_func'
-import dotenv from 'dotenv';
-dotenv.config();
+import { getAllYoutuberId } from '@utils/db_func';
+
+const defaultPort = 3000;
 
 const pubsub_startup = () => {
 	const app = express();
-	const PORT = process.env.EXPRESS_PORT || 3000;
+	const PORT = process.env.EXPRESS_PORT || defaultPort;
 	
 	// Middleware
 	app.use(bodyParser.urlencoded({ extended: true }));
@@ -73,10 +79,26 @@ const pubsub_startup = () => {
 	// サーバー起動 & 購読リクエスト
 	app.listen(PORT, () => {
 		console.log(`🚀 Express server running at http://localhost:${PORT}`);
-		console.log('📬 購読リクエスト送信中...')
-		const subscribeFeedList = [];
-		subscribeFeedList.push(...getPublicAndMemberVideosList({channelId: 'UCtC3B1n4XMiJmrDtu1Ni5qw'}));
-		subscribeToFeed({topicUrls: subscribeFeedList, callbackUrl: process.env.CALLBACK_URL ?? undefined, hubUrl: 'https://pubsubhubbub.appspot.com/'});
+
+		// 現在の時間から一時間後までにlease_timeが過ぎるチャンネルを再購読
+		const reSubscribeFeedList = [] as string[];
+		const now = new Date();
+		const anHourLater = new Date(now.getTime() + 60 * 60 * 1000); // 一時間後
+		// lease_timeが過ぎるチャンネルを取得
+		const reSubscribeYoutuberList = getAllYoutuberId({ databaseDir: process.env.DATABASE, where: `lease_time < (datetime(\'${formatDate(anHourLater, 'yyyy-MM-dd HH:mm:ss')}\'))` }) as string[];
+		reSubscribeYoutuberList.map((channelId) => {
+			reSubscribeFeedList.push(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`)
+		})
+		// 送信する必要がある場合、購読リクエストを送信
+		if (reSubscribeFeedList.length > 0) {
+			console.log('📬 Posting subscribe request...') 
+			subscribeToFeed({topicUrls: reSubscribeFeedList, callbackUrl: process.env.CALLBACK_URL ?? undefined, hubUrl: 'https://pubsubhubbub.appspot.com/'});
+			const database = new Database(process.env.DATABASE ?? undefined);
+			reSubscribeYoutuberList?.forEach((id) => {
+				database.prepare(`UPDATE youtubers SET lease_time = datetime('now', '+1 day', 'localtime') WHERE channel_id = ?;`).run(id);
+			})
+			database.close();
+		}
 	});
 }
 
