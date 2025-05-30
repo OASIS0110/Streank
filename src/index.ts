@@ -34,6 +34,12 @@ db.prepare(`CREATE TABLE IF NOT EXISTS register_list (
 	members_only INTEGER NOT NULL DEFAULT 0 CHECK (members_only IN (0, 1)),
 	presume INTEGER NOT NULL DEFAULT 0 CHECK (presume IN (0, 1)),
 	FOREIGN KEY (youtuber) REFERENCES youtubers(id));`).run();
+db.prepare(`CREATE TABLE IF NOT EXISTS video_data (
+	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+	youtuber INTEGER NOT NULL,
+	live_start_at TEXT,
+	recieved_at TEXT NOT NULL,
+	FOREIGN KEY (youtuber) REFERENCES youtubers(id));`).run();
 db.close();
 
 const interactions = new DiscordInteractions(client);

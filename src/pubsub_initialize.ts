@@ -1,8 +1,9 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import Database from 'better-sqlite3';
-import dotenv from 'dotenv';
 import { formatDate } from 'date-fns'
+import cron from 'node-cron';
+import dotenv from 'dotenv';
 dotenv.config();
 
 import { subscribeToFeed } from '@utils/pubsub_func';
@@ -10,6 +11,29 @@ import { getPublicAndMemberVideosList } from '@utils/youtube_func'
 import { getAllYoutuberId } from '@utils/db_func';
 
 const defaultPort = 3000;
+const daySeconds = 24 * 60 * 60; // 1日の秒数
+
+const checkYoutuberLeaseTime = ({databaseDir, checkTime = new Date(), leaseTimeSeconds = daySeconds}: {databaseDir: string, checkTime?: Date, leaseTimeSeconds?: number}) => {
+	const database = new Database(databaseDir);
+	// lease_timeが過ぎるチャンネルを取得
+	const reSubscribeFeedList = getAllYoutuberId({ databaseDir: process.env.DATABASE, where: `lease_time < (datetime(\'${formatDate(checkTime, 'yyyy-MM-dd HH:mm:ss')}\', localtime))` }) as string[];
+	// 送信する必要がある場合、購読リクエストを送信
+	if (reSubscribeFeedList.length > 0) {
+		console.log('📬 Posting subscribe request...')
+		reSubscribeFeedList.map((channelId) => {
+			console.log(`Re subscribing to channel: ${channelId}`);
+			subscribeToFeed({
+				topicUrls: [`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`],
+				callbackUrl: process.env.CALLBACK_URL ?? undefined,
+				hubUrl: 'https://pubsubhubbub.appspot.com/',
+				leaseSeconds: leaseTimeSeconds,
+			})
+			database.prepare(`UPDATE youtubers SET lease_time = datetime(now, '+${leaseTimeSeconds} seconds', 'localtime') WHERE channel_id = ?;`).run(channelId);
+		})
+	}
+	database.close();
+	console.log(`✅ Checked lease time for ${reSubscribeFeedList.length} channels.`);
+}
 
 const pubsub_startup = () => {
 	const app = express();
@@ -64,7 +88,6 @@ const pubsub_startup = () => {
 			timestamp: new Date(),
 		};
 	
-		console.log(req.body); // フィードの内容（ATOM形式）
 		res.sendStatus(200);
 	});
 	
@@ -79,27 +102,27 @@ const pubsub_startup = () => {
 	// サーバー起動 & 購読リクエスト
 	app.listen(PORT, () => {
 		console.log(`🚀 Express server running at http://localhost:${PORT}`);
-
 		// 現在の時間から一時間後までにlease_timeが過ぎるチャンネルを再購読
-		const reSubscribeFeedList = [] as string[];
 		const now = new Date();
 		const anHourLater = new Date(now.getTime() + 60 * 60 * 1000); // 一時間後
-		// lease_timeが過ぎるチャンネルを取得
-		const reSubscribeYoutuberList = getAllYoutuberId({ databaseDir: process.env.DATABASE, where: `lease_time < (datetime(\'${formatDate(anHourLater, 'yyyy-MM-dd HH:mm:ss')}\'))` }) as string[];
-		reSubscribeYoutuberList.map((channelId) => {
-			reSubscribeFeedList.push(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`)
-		})
-		// 送信する必要がある場合、購読リクエストを送信
-		if (reSubscribeFeedList.length > 0) {
-			console.log('📬 Posting subscribe request...') 
-			subscribeToFeed({topicUrls: reSubscribeFeedList, callbackUrl: process.env.CALLBACK_URL ?? undefined, hubUrl: 'https://pubsubhubbub.appspot.com/'});
-			const database = new Database(process.env.DATABASE ?? undefined);
-			reSubscribeYoutuberList?.forEach((id) => {
-				database.prepare(`UPDATE youtubers SET lease_time = datetime('now', '+1 day', 'localtime') WHERE channel_id = ?;`).run(id);
-			})
-			database.close();
-		}
+		checkYoutuberLeaseTime({
+			databaseDir: process.env.DATABASE ?? './db/streank.db',
+			checkTime: anHourLater,
+			leaseTimeSeconds: 7 * 24 * 60 * 60, // 7日間の秒数
+		});
 	});
+
+	cron.schedule('*/30 * * * *', () => {
+		// 毎時0分と30分に実行
+		console.log(`${Date.now()}: 🕐 Running cron job to check youtuber lease time...`);
+		const now = new Date();
+		const anHourLater = new Date(now.getTime() + 60 * 60 * 1000); // 一時間後
+		checkYoutuberLeaseTime({
+			databaseDir: process.env.DATABASE ?? './db/streank.db',
+			checkTime: anHourLater,
+			leaseTimeSeconds: 7 * 24 * 60 * 60, // 7日間の秒数
+		});
+	})
 }
 
 export default pubsub_startup;
