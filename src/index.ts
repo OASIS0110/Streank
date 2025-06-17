@@ -21,12 +21,15 @@ const client = new Client({
 
 // DB Check
 const db = new Database(process.env.DATABASE ?? './db/streank.db');
+// youtubers table
 db.prepare(`CREATE TABLE IF NOT EXISTS youtubers (
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	name TEXT NOT NULL,
 	handle_name TEXT NOT NULL CHECK (handle_name GLOB '@*'),
 	channel_id TEXT NOT NULL,
-	lease_time TEXT DEFAULT (datetime('now', 'localtime')));`).run();
+	lease_time TEXT DEFAULT (datetime('now', 'localtime')),
+	callback_url TEXT NOT NULL);`).run();
+// register_list table
 db.prepare(`CREATE TABLE IF NOT EXISTS register_list (
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	client_id TEXT NOT NULL,
@@ -34,6 +37,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS register_list (
 	members_only INTEGER NOT NULL DEFAULT 0 CHECK (members_only IN (0, 1)),
 	presume INTEGER NOT NULL DEFAULT 0 CHECK (presume IN (0, 1)),
 	FOREIGN KEY (youtuber) REFERENCES youtubers(id));`).run();
+// video_data table
 db.prepare(`CREATE TABLE IF NOT EXISTS video_data (
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	youtuber INTEGER NOT NULL,
