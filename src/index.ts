@@ -42,6 +42,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS video_data (
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	youtuber INTEGER NOT NULL,
 	live_start_at TEXT,
+	last_updated_at TEXT NOT NULL,
 	recieved_at TEXT NOT NULL,
 	FOREIGN KEY (youtuber) REFERENCES youtubers(id));`).run();
 db.close();
