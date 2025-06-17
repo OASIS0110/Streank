@@ -1,8 +1,9 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import Database from 'better-sqlite3';
-import { formatDate } from 'date-fns'
+import { formatDate } from 'date-fns';
 import cron from 'node-cron';
+import { parseStringPromise } from 'xml2js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -16,7 +17,7 @@ const daySeconds = 24 * 60 * 60; // 1日の秒数
 const checkYoutuberLeaseTime = ({databaseDir, checkTime = new Date(), leaseTimeSeconds = daySeconds}: {databaseDir: string, checkTime?: Date, leaseTimeSeconds?: number}) => {
 	const database = new Database(databaseDir);
 	// lease_timeが過ぎるチャンネルを取得
-	const reSubscribeFeedList = getAllYoutuberId({ databaseDir: process.env.DATABASE, where: `lease_time < (datetime(\'${formatDate(checkTime, 'yyyy-MM-dd HH:mm:ss')}\', localtime))` }) as string[];
+	const reSubscribeFeedList = getAllYoutuberId({ databaseDir: process.env.DATABASE, where: `lease_time < (datetime(\'${formatDate(checkTime, 'yyyy-MM-dd HH:mm:ss')}\'))` }) as string[];
 	// 送信する必要がある場合、購読リクエストを送信
 	if (reSubscribeFeedList.length > 0) {
 		console.log('📬 Posting subscribe request...')
@@ -28,7 +29,9 @@ const checkYoutuberLeaseTime = ({databaseDir, checkTime = new Date(), leaseTimeS
 				hubUrl: 'https://pubsubhubbub.appspot.com/',
 				leaseSeconds: leaseTimeSeconds,
 			})
-			database.prepare(`UPDATE youtubers SET lease_time = datetime(now, '+${leaseTimeSeconds} seconds', 'localtime') WHERE channel_id = ?;`).run(channelId);
+			const nextLeaseTime = new Date(Date.now() + leaseTimeSeconds * 1000);
+			console.log(`UPDATE youtubers SET lease_time = datetime(\'${formatDate(nextLeaseTime, 'yyyy-MM-dd HH:mm:ss')}\', 'localtime') WHERE channel_id = ?;`)
+			database.prepare(`UPDATE youtubers SET lease_time = datetime(\'${formatDate(nextLeaseTime, 'yyyy-MM-dd HH:mm:ss')}\', 'localtime') WHERE channel_id = ?;`).run(channelId);
 		})
 	}
 	database.close();
@@ -74,23 +77,39 @@ const pubsub_startup = () => {
 	
 		if (challenge) {
 			res.status(200).send(challenge);
-		} else {
+		}
+		else {
 			res.status(400).send('Missing challenge');
 		}
 	});
 	
 	// 2. フィード更新通知を受け取る（POST）
-	app.post('/callback', (req, res) => {
-		console.log('📩 フィード通知受信');
+	app.post('/callback', async (req, res) => {
+		console.log(`📩 ${formatDate(new Date(), 'HH:mm:ss')} フィード通知受信`);
+		const feedData = req.body;
+		const parsedFeed = await parseStringPromise(feedData)
 	
 		lastNotification = {
-			body: req.body,
+			body: parsedFeed,
 			timestamp: new Date(),
 		};
-	
+		
+		// 取得したフィードの情報を取得
+		const channelId = parsedFeed.feed['yt:channelId']?.[0];
+		const channelName = parsedFeed.feed.title;
+		console.log(`チャンネル名: ${channelName}, チャンネルID: ${channelId}`);
+		// 取得された動画の情報を取得
+		for (const entry of parsedFeed.feed.entry) {
+			const videoId = entry['yt:videoId']?.[0];
+			const videoTitle = entry.title?.[0];
+			const videoPublished = entry.published?.[0];
+			const description = entry['media:group']?.[0]['media:description']?.[0];
+			console.log(`📹 New video detected: ${videoTitle} (ID: ${videoId}) at ${videoPublished}`);
+		}
+		// console.log(`${formatDate(Date.now(), 'yyyy-MM-dd hh:mm:ss')} 📬 Received feed: ${JSON.stringify(parsedFeed, null, 2)}`);
 		res.sendStatus(200);
 	});
-	
+
 	// 3. 購読状況を確認するエンドポイント
 	app.get('/status', (req, res) => {
 		res.json({
@@ -114,7 +133,7 @@ const pubsub_startup = () => {
 
 	cron.schedule('*/30 * * * *', () => {
 		// 毎時0分と30分に実行
-		console.log(`${Date.now()}: 🕐 Running cron job to check youtuber lease time...`);
+		console.log(`${formatDate(Date.now(), 'yyyy-MM-dd HH:mm:ss')}: 🕐 Running cron job to check youtuber lease time...`);
 		const now = new Date();
 		const anHourLater = new Date(now.getTime() + 60 * 60 * 1000); // 一時間後
 		checkYoutuberLeaseTime({
