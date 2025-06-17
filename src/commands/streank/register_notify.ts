@@ -40,17 +40,18 @@ const registerNotify = new ChatInput({
 		const presume = interaction.options.getBoolean('presume') ?? true;
 		const clientId = interaction.user.id;
 
+		// DBからチャンネルを検索
 		const searchDBResult = searchYoutuberFromDB({databaseDir: process.env.DATABASE ?? undefined, searchStr: channel, debug: debug});
 		// DBに登録されていない場合 -> YouTube APIで検索
 		if (!searchDBResult) {
 			const searchYoutuberResult = await searchYoutuber({ APIKey: process.env.YOUTUBE_API_KEY, searchStr: channel, maxResult: 1, part: ['contentDetails', 'id', 'snippet'], debug: debug});
 			const channelData = searchYoutuberResult?.data.items
-			// チャンネルを見つけられなかった場合
+			// Youtube上でチャンネルを見つけられなかった場合
 			if ((searchYoutuberResult?.data.pageInfo?.totalResults ?? 0) === 0 || channelData == undefined) await interaction.reply({
 				content: `チャンネルを見つけることができませんでした。入力したチャンネルが合っているか確認してください。\nチャンネル名を入力した場合はBotに登録されていない可能性があります。チャンネルIDかハンドル名を入力して再実行してください。`,
 				flags: [MessageFlags.Ephemeral],
 			})
-			// チャンネルを見つけた場合、DBに登録
+			// Youtube上でチャンネルを見つけた場合、DBに登録
 			else {
 				const database = new Database(process.env.DATABASE ?? undefined);
 				database.prepare(`INSERT INTO youtubers (name, handle_name, channel_id, lease_time) VALUES (?, ?, ?, ?);`).run(
@@ -77,11 +78,12 @@ const registerNotify = new ChatInput({
 				flags: MessageFlags.Ephemeral,
 			})}
 		}
-		// DBに登録されている場合
+		// DBにYoutuberが登録されていた場合
 		else {
 			// 通知がすでに登録されているか確認
 			const database = new Database(process.env.DATABASE ?? undefined);
-			const checkAlreadyRegistered = database.prepare(`SELECT 
+			const checkAlreadyRegistered = database.prepare(`
+				SELECT 
 				register_list.client_id,
 				register_list.members_only,
 				register_list.presume,
@@ -91,6 +93,7 @@ const registerNotify = new ChatInput({
 				FROM
 				register_list JOIN youtubers ON register_list.youtuber = youtubers.id
 				WHERE register_list.client_id = ? AND register_list.youtuber = ?`).get(clientId, searchDBResult.id) as {client_id: string, members_only: number, presume: number, name: string, handle_name: string, channel_id: string} | undefined;
+			// すでに通知設定が登録されている場合
 			if (checkAlreadyRegistered) {
 				await interaction.reply({
 					content: `すでに通知の登録がされています。登録されている設定は以下の通りです。\n- チャンネル名: [${checkAlreadyRegistered.name}](https://www.youtube.com/channel/${checkAlreadyRegistered.channel_id})\n- メンバー限定配信を通知するか: ${checkAlreadyRegistered.members_only ? '有効' : '無効'}\n- 他チャンネルに出演する可能性がある場合に通知: ${checkAlreadyRegistered.presume ? '有効' : '無効'}\n設定を変更する場合は、\`/notify_setting\`コマンドを使用してください。`,
@@ -98,6 +101,7 @@ const registerNotify = new ChatInput({
 				})
 				return;
 			}
+			// 通知設定が登録されていなかった場合
 			const youtuberId = searchDBResult.id;
 			database.prepare('INSERT INTO register_list (client_id, youtuber, members_only, presume) VALUES (?, ?, ?, ?);').run(
 				clientId,
