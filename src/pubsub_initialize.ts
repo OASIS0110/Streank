@@ -13,6 +13,7 @@ import { getAllYoutuberId } from '@utils/db_func';
 
 const defaultPort = 3000;
 const daySeconds = 24 * 60 * 60; // 1日の秒数
+const leaseTimeSeconds = 7 * daySeconds; // 7日間の秒数
 
 const checkYoutuberLeaseTime = ({databaseDir, checkTime = new Date(), leaseTimeSeconds = daySeconds}: {databaseDir: string, checkTime?: Date, leaseTimeSeconds?: number}) => {
 	const database = new Database(databaseDir);
@@ -29,13 +30,10 @@ const checkYoutuberLeaseTime = ({databaseDir, checkTime = new Date(), leaseTimeS
 				hubUrl: 'https://pubsubhubbub.appspot.com/',
 				leaseSeconds: leaseTimeSeconds,
 			})
-			const nextLeaseTime = new Date(Date.now() + leaseTimeSeconds * 1000);
-			console.log(`UPDATE youtubers SET lease_time = datetime(\'${formatDate(nextLeaseTime, 'yyyy-MM-dd HH:mm:ss')}\', 'localtime') WHERE channel_id = ?;`)
-			database.prepare(`UPDATE youtubers SET lease_time = datetime(\'${formatDate(nextLeaseTime, 'yyyy-MM-dd HH:mm:ss')}\', 'localtime') WHERE channel_id = ?;`).run(channelId);
 		})
 	}
 	database.close();
-	console.log(`✅ Checked lease time for ${reSubscribeFeedList.length} channels.`);
+	console.log(`[INFO] ${formatDate(new Date(), 'HH:mm:ss')} ✅ Checked youtuber lease time and re-subscribed ${reSubscribeFeedList.length} channels.`);
 }
 
 const pubsub_startup = () => {
@@ -65,7 +63,7 @@ const pubsub_startup = () => {
 		const mode = req.query['hub.mode'] as string;
 		const topic = req.query['hub.topic'] as string;
 	
-		console.log(`🔄 Challenge receive: ${mode} for topic: ${topic}`);
+		console.log(`[INFO] ${formatDate(new Date(), 'HH:mm:ss')} 🔄 Challenge receive: ${mode} for topic: ${topic}`);
 	
 		// 記録
 		lastVerification = {
@@ -74,6 +72,9 @@ const pubsub_startup = () => {
 			challenge,
 			timestamp: new Date(),
 		};
+		const database= new Database(process.env.DATABASE ?? './db/streank.db');
+		database.prepare('UPDATE youtubers SET lease_time = ? WHERE channel_id = ?;').run(formatDate(new Date(Date.now() + leaseTimeSeconds * 1000), 'yyyy-MM-dd HH:mm:ss'), topic.split('?channel_id=')[1]);
+		database.close();
 	
 		if (challenge) {
 			res.status(200).send(challenge);
@@ -85,7 +86,7 @@ const pubsub_startup = () => {
 	
 	// 2. フィード更新通知を受け取る（POST）
 	app.post('/callback', async (req, res) => {
-		console.log(`📩 ${formatDate(new Date(), 'HH:mm:ss')} フィード通知受信`);
+		console.log(`[INFO] ${formatDate(new Date(), 'HH:mm:ss')} 📩 フィード通知受信`);
 		const feedData = req.body;
 		const parsedFeed = await parseStringPromise(feedData)
 	
@@ -104,7 +105,7 @@ const pubsub_startup = () => {
 			const videoTitle = entry.title?.[0];
 			const videoPublished = entry.published?.[0];
 			const description = entry['media:group']?.[0]['media:description']?.[0];
-			console.log(`📹 New video detected: ${videoTitle} (ID: ${videoId}) at ${videoPublished}`);
+			console.log(`[INFO] ${formatDate(new Date(), 'HH:mm:ss')} 📹 New video detected: ${videoTitle} (ID: ${videoId}) at ${videoPublished}`);
 		}
 		// console.log(`${formatDate(Date.now(), 'yyyy-MM-dd hh:mm:ss')} 📬 Received feed: ${JSON.stringify(parsedFeed, null, 2)}`);
 		res.sendStatus(200);
@@ -120,26 +121,26 @@ const pubsub_startup = () => {
 	
 	// サーバー起動 & 購読リクエスト
 	app.listen(PORT, () => {
-		console.log(`🚀 Express server running at http://localhost:${PORT}`);
+		console.log(`[INFO] ${formatDate(new Date(), 'HH:mm:ss')} 🚀 Express server running at http://localhost:${PORT}`);
 		// 現在の時間から一時間後までにlease_timeが過ぎるチャンネルを再購読
 		const now = new Date();
 		const anHourLater = new Date(now.getTime() + 60 * 60 * 1000); // 一時間後
 		checkYoutuberLeaseTime({
 			databaseDir: process.env.DATABASE ?? './db/streank.db',
 			checkTime: anHourLater,
-			leaseTimeSeconds: 7 * 24 * 60 * 60, // 7日間の秒数
+			leaseTimeSeconds: leaseTimeSeconds, // 7日間の秒数
 		});
 	});
 
 	cron.schedule('*/30 * * * *', () => {
 		// 毎時0分と30分に実行
-		console.log(`${formatDate(Date.now(), 'yyyy-MM-dd HH:mm:ss')}: 🕐 Running cron job to check youtuber lease time...`);
+		console.log(`[INFO] ${formatDate(new Date(), 'HH:mm:ss')} 🕐 Running cron job to check youtuber lease time...`);
 		const now = new Date();
 		const anHourLater = new Date(now.getTime() + 60 * 60 * 1000); // 一時間後
 		checkYoutuberLeaseTime({
 			databaseDir: process.env.DATABASE ?? './db/streank.db',
 			checkTime: anHourLater,
-			leaseTimeSeconds: 7 * 24 * 60 * 60, // 7日間の秒数
+			leaseTimeSeconds: leaseTimeSeconds, // 7日間の秒数
 		});
 	})
 }
