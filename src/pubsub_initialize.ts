@@ -4,6 +4,7 @@ import Database from 'better-sqlite3';
 import { formatDate } from 'date-fns';
 import cron from 'node-cron';
 import { parseStringPromise } from 'xml2js';
+import { Client } from 'discord.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -36,7 +37,7 @@ const checkYoutuberLeaseTime = ({databaseDir, checkTime = new Date(), leaseTimeS
 	console.log(`[INFO] ${formatDate(new Date(), 'HH:mm:ss')} ✅ Checked youtuber lease time and re-subscribed ${reSubscribeFeedList.length} channels.`);
 }
 
-const pubsub_startup = () => {
+const pubsub_startup = (client: Client) => {
 	const app = express();
 	const PORT = process.env.EXPRESS_PORT || defaultPort;
 	
@@ -106,6 +107,46 @@ const pubsub_startup = () => {
 			const videoPublished = entry.published?.[0];
 			const description = entry['media:group']?.[0]['media:description']?.[0];
 			console.log(`[INFO] ${formatDate(new Date(), 'HH:mm:ss')} 📹 New video detected: ${videoTitle} (ID: ${videoId}) at ${videoPublished}`);
+
+			// ユーザーに通知
+			const database = new Database(process.env.DATABASE ?? './db/streank.db');
+			const notificationUserList = database.prepare(`SELECT client_id FROM register_list WHERE youtuber = (SELECT id FROM youtubers WHERE channel_id = ?);`).all(channelId) as { client_id: string }[];
+			for (const row of notificationUserList) {
+				const userId = row.client_id;
+				const user = await client.users.fetch(userId);
+				console.log(`[INFO] ${formatDate(new Date(), 'HH:mm:ss')} 📬 Notifying user: ${user.username} (${userId}) about new video: ${videoTitle}`);
+				// ユーザーに通知を送信する部分(コメントアウトを外すと実際に通知が送信されるので注意)
+				// user.send({
+				// 	embeds: [
+				// 		{
+				// 			title: videoTitle,
+				// 			url: `https://www.youtube.com/watch?v=${videoId}`,
+				// 			description: description || 'No description available',
+				// 			thumbnail: {
+				// 				url: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+				// 			},
+				// 			timestamp: videoPublished,
+				// 			color: 0xFF0000, // YouTube red
+				// 		}
+				// 	]
+				// });
+			}
+			// テストで自分に通知を送る
+			const me = await client.users.fetch('602519376247259153');
+			me.send({
+				embeds: [
+					{
+						title: videoTitle,
+						url: `https://www.youtube.com/watch?v=${videoId}`,
+						description: description[30] || 'No description available',
+						thumbnail: {
+							url: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+						},
+						timestamp: videoPublished,
+						color: 0xFF0000, // YouTube red
+					}
+				]
+			});
 		}
 		// console.log(`${formatDate(Date.now(), 'yyyy-MM-dd hh:mm:ss')} 📬 Received feed: ${JSON.stringify(parsedFeed, null, 2)}`);
 		res.sendStatus(200);

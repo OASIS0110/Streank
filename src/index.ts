@@ -53,7 +53,7 @@ interactions.loadRegistries(path.resolve(__dirname, './commands'));
 const events = new DiscordEvents(client);
 events.register(path.resolve(__dirname, './events'));
 
-pubsub_startup();
+pubsub_startup(client);
 
 client.once(Events.ClientReady, (): void => {
   console.log('[INFO] BOT ready!');
