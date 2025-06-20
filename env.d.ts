@@ -9,6 +9,8 @@ declare module 'node:process' {
 				readonly DATABASE: string;
 				readonly EXPRESS_PORT: string;
 				readonly CALLBACK_URL: string;
+				readonly PRODUCT_ENV: string;
+				readonly DEBUG_MODE: string;
 			}
 		}
 	}
