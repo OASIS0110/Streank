@@ -11,7 +11,6 @@ import { DiscordEvents } from './modules/events';
 const client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
-		GatewayIntentBits.GuildVoiceStates,
 		GatewayIntentBits.MessageContent,
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.DirectMessages,
@@ -27,6 +26,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS youtubers (
 	name TEXT NOT NULL,
 	handle_name TEXT NOT NULL CHECK (handle_name GLOB '@*'),
 	channel_id TEXT NOT NULL,
+	channel_icon TEXT NOT NULL,
 	lease_time TEXT DEFAULT (datetime('now', 'localtime')),
 	callback_url TEXT NOT NULL);`).run();
 // register_list table
@@ -41,8 +41,11 @@ db.prepare(`CREATE TABLE IF NOT EXISTS register_list (
 db.prepare(`CREATE TABLE IF NOT EXISTS video_data (
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	youtuber INTEGER NOT NULL,
+	video_id TEXT NOT NULL,
+	notify_sent INTEGER NOT NULL DEFAULT 0 CHECK (notify_sent IN (0, 1)),
 	live_start_at TEXT,
-	last_updated_at TEXT NOT NULL,
+	published_at TEXT NOT NULL,
+	updated_at TEXT NOT NULL,
 	recieved_at TEXT NOT NULL,
 	FOREIGN KEY (youtuber) REFERENCES youtubers(id));`).run();
 db.close();
