@@ -5,7 +5,7 @@ import { formatDate } from 'date-fns';
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { getPublicAndMemberVideosList, searchYoutuber } from '@utils/youtube_func';
+import { searchYoutuber } from '@utils/youtube_func';
 import { searchYoutuberFromDB } from '@utils/db_func';
 import { subscribeToFeed } from '@utils/pubsub_func';
 
@@ -47,14 +47,14 @@ const registerNotify = new ChatInput({
 			const searchYoutuberResult = await searchYoutuber({ APIKey: process.env.YOUTUBE_API_KEY, searchStr: channel, maxResult: 1, part: ['contentDetails', 'id', 'snippet'], debug: debug});
 			const channelData = searchYoutuberResult?.data.items
 			// Youtube上でチャンネルを見つけられなかった場合
-			if ((searchYoutuberResult?.data.pageInfo?.totalResults ?? 0) === 0 || channelData == undefined) await interaction.reply({
-				content: `チャンネルを見つけることができませんでした。入力したチャンネルが合っているか確認してください。\nチャンネル名を入力した場合はBotに登録されていない可能性があります。チャンネルIDかハンドル名を入力して再実行してください。`,
+			if ((searchYoutuberResult?.data.pageInfo?.totalResults ?? 0) === 0 || channelData === undefined) await interaction.reply({
+				content: 'チャンネルを見つけることができませんでした。入力したチャンネルが合っているか確認してください。\nチャンネル名を入力した場合はBotに登録されていない可能性があります。チャンネルIDかハンドル名を入力して再実行してください。',
 				flags: [MessageFlags.Ephemeral],
 			})
 			// Youtube上でチャンネルを見つけた場合、DBに登録
 			else {
 				const database = new Database(process.env.DATABASE ?? undefined);
-				database.prepare(`INSERT INTO youtubers (name, handle_name, channel_id, lease_time) VALUES (?, ?, ?, ?);`).run(
+				database.prepare('INSERT INTO youtubers (name, handle_name, channel_id, lease_time) VALUES (?, ?, ?, ?);').run(
 					channelData[0].snippet?.title,
 					channelData[0].snippet?.customUrl,
 					channelData[0].id,
