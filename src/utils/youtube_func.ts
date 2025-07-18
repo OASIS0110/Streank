@@ -31,6 +31,7 @@ const searchYoutuber = async ({ APIKey, searchStr, maxResult = 50, part = ['snip
 		version: 'v3',
 		auth: APIKey,
 	});
+	let res = undefined;
 	// search by url
 	if (searchStr.includes('youtube.com/')) {
 		const searchStrSplits = searchStr.split(/(\/|\?|)/);
@@ -39,48 +40,45 @@ const searchYoutuber = async ({ APIKey, searchStr, maxResult = 50, part = ['snip
 		if (searchStr.includes('channel/')) {
 			const channelId = searchStrSplits.find((str) => str.startsWith('UC'));
 			if (!channelId) return undefined;
-			const res = await youtubeClient.channels.list({
+			res = await youtubeClient.channels.list({
 				part: part,
 				id: [channelId],
 				maxResults: maxResult,
 			})
 			debug && console.log(res.data.items);
-			return res;
 		}
 		//search by hundle name
 		if (searchStr.includes('@')) {
 			const hundleName = searchStrSplits.find((str) => str.startsWith('@'));
-			const res = await youtubeClient.channels.list({
+			res = await youtubeClient.channels.list({
 				part: part,
 				forHandle: hundleName,
 				maxResults: maxResult,
 			})
 			debug && console.log(res.data.items);
-			return res;
 		}
 	}
 	// search by channel id
 	if (searchStr.startsWith('UC') && searchStr.length === 24 || searchType === 'channelId') {
 		debug && console.log('searching Youtuber by channel id...');
-		const res = await youtubeClient.channels.list({
+		res = await youtubeClient.channels.list({
 			part: part,
 			id: [searchStr],
 			maxResults: maxResult,
 		})
 		debug && console.log(res.data.items);
-		return res;
 	}
 	// search by handle name
 	else {
 		debug && console.log('searching Youtuber by handle name...');
-		const res = await youtubeClient.channels.list({
+		res = await youtubeClient.channels.list({
 			part: part,
 			forHandle: searchStr,
 			maxResults: maxResult,
 		})
 		debug && console.log(res.data.items);
-		return res;
 	}
+	return res;
 }
 
 const getPublicAndMemberVideosList = ({channelId}: {channelId: string | undefined | null}) => {
