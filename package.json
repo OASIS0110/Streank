@@ -1,64 +1,61 @@
 {
-		"name": "streank",
-		"version": "1.0.0",
-		"description": "description",
-		"main": "index.js",
-		"scripts": {
-				"start": "node build/index.js",
-				"deploy": "node deploy-commands.js",
-				"dev": "dotenvx run -f .env.local -- tsnd --import ./register-loader.mjs -r tsconfig-paths/register -T src/index.ts",
-				"build": "tsc -p .",
-				"prepare": "ts-patch install",
-				"test": "tsnd --loader ts-node/esm -T --rs src/test/win32test.ts"
-		},
-		"keywords": [],
-		"author": "",
-		"license": "ISC",
-		"dependencies": {
-				"@akki256/discord-interaction": "^3.1.1",
-				"@biomejs/biome": "^1.9.4",
-				"@googleapis/youtube": "^25.1.0",
-				"@types/gapi.youtube": "^3.0.40",
-				"@types/node": "^22.15.32",
-				"axios": "^1.10.0",
-				"better-sqlite3": "^11.10.0",
-				"body-parser": "^2.2.0",
-				"csv-parse": "^5.6.0",
-				"date-fns": "^4.1.0",
-				"discord-api-types": "^0.38.12",
-				"discord.js": "^14.20.0",
-				"dotenv": "^16.5.0",
-				"express": "^5.1.0",
-				"node-cron": "^4.1.0",
-				"xml2js": "^0.6.2"
-		},
-		"devDependencies": {
-				"@dotenvx/dotenvx": "^1.44.2",
-				"@swc/core": "^1.12.1",
-				"@swc/helpers": "^0.5.17",
-				"@types/better-sqlite3": "^7.6.13",
-				"@types/body-parser": "^1.19.6",
-				"@types/express": "^5.0.3",
-				"@types/xml2js": "^0.4.14",
-				"shx": "^0.3.4",
-				"ts-node": "^10.9.2",
-				"ts-node-dev": "^2.0.0",
-				"ts-patch": "^3.3.0",
-				"tsconfig-paths": "^4.2.0",
-				"typescript": "^5.8.3",
-				"typescript-transform-paths": "^3.5.5"
-		},
-		"override": {
-				"discord-api-types": "0.37.35"
-		},
-		"pnpm": {
-				"override": {
-						"discord-api-types": "0.37.35"
-				},
-				"onlyBuiltDependencies": [
-						"@biomejs/biome",
-						"@swc/core",
-						"better-sqlite3"
-				]
-		}
+	"name": "streank",
+	"version": "1.0.0",
+	"description": "description",
+	"main": "index.js",
+	"scripts": {
+		"start": "node build/index.js",
+		"deploy": "node deploy-commands.js",
+		"dev": "dotenvx run -f .env.local -- tsnd --import ./register-loader.mjs -r tsconfig-paths/register -T src/index.ts",
+		"build": "tsc -p .",
+		"prepare": "ts-patch install",
+		"test": "tsnd --loader ts-node/esm -T --rs src/test/win32test.ts"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"@akki256/discord-interaction": "^3.1.1",
+		"@biomejs/biome": "^1.9.4",
+		"@googleapis/youtube": "^25.1.0",
+		"@types/gapi.youtube": "^3.0.40",
+		"@types/node": "^22.15.32",
+		"axios": "^1.10.0",
+		"better-sqlite3": "^11.10.0",
+		"body-parser": "^2.2.0",
+		"csv-parse": "^5.6.0",
+		"date-fns": "^4.1.0",
+		"discord-api-types": "^0.38.12",
+		"discord.js": "^14.20.0",
+		"dotenv": "^16.5.0",
+		"express": "^5.1.0",
+		"node-cron": "^4.1.0",
+		"xml2js": "^0.6.2"
+	},
+	"devDependencies": {
+		"@dotenvx/dotenvx": "^1.44.2",
+		"@swc/core": "^1.12.1",
+		"@swc/helpers": "^0.5.17",
+		"@types/better-sqlite3": "^7.6.13",
+		"@types/body-parser": "^1.19.6",
+		"@types/express": "^5.0.3",
+		"@types/xml2js": "^0.4.14",
+		"shx": "^0.3.4",
+		"ts-node": "^10.9.2",
+		"ts-node-dev": "^2.0.0",
+		"ts-patch": "^3.3.0",
+		"tsconfig-paths": "^4.2.0",
+		"typescript": "^5.8.3",
+		"typescript-transform-paths": "^3.5.5"
+	},
+	"override": {
+		"discord-api-types": "0.37.35"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"@biomejs/biome",
+			"@swc/core",
+			"better-sqlite3"
+		]
+	}
 }
