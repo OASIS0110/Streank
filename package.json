@@ -6,7 +6,7 @@
 		"scripts": {
 				"start": "node build/index.js",
 				"deploy": "node deploy-commands.js",
-				"dev": "tsnd --import ./register-loader.mjs -r tsconfig-paths/register -T src/index.ts",
+				"dev": "dotenvx run -f .env.local -- tsnd --import ./register-loader.mjs -r tsconfig-paths/register -T src/index.ts",
 				"build": "tsc -p .",
 				"prepare": "ts-patch install",
 				"test": "tsnd --loader ts-node/esm -T --rs src/test/win32test.ts"
